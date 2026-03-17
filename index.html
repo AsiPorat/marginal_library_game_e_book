@@ -400,44 +400,48 @@
   </div>
 
   <p class="muted">${
-    <div class="btnrow" style="margin-top:10px; justify-content:flex-start">
-      <button class="primary" onclick="continueAnyway(); closeModal(); render('reader');">
-        ${state.lang==="he" ? "המשך בכל מקרה" : "Continue anyway"}
-      </button>
+    state.lang==="he"
+      ? `נחש מילה בת ${target.length} אותיות. אחרי כל ניסיון תקבל בול ופגיעה. יש 5 ניסיונות. אפשר להמשיך גם בלי פתרון (0).`
+      : `Guess a ${target.length}-letter word. After each try you get Bull and Hit counts. You have 5 attempts. You can continue without solving (0).`
+  }</p>
+
+  <div class="btnrow" style="margin-top:10px; justify-content:flex-start">
+    <button class="primary" onclick="continueAnyway(); closeModal(); render('reader');">
+      ${state.lang==="he" ? "המשך בכל מקרה" : "Continue anyway"}
+    </button>
+  </div>
+
+  <div class="puzzleBox">
+    <div class="bhBoxes" dir="${state.lang==="he" ? "rtl" : "ltr"}">
+      ${Array.from({length:(mandatoryTarget(ch)||"").length||5}).map((_,i)=>`<input class="bhBox" id="bh${i}" maxlength="1" />`).join("")}
     </div>
 
-    <div class="puzzleBox">
-      <div class="bhBoxes" dir="${state.lang==="he" ? "rtl" : "ltr"}">
-        ${Array.from({length:(mandatoryTarget(ch)||"").length||5}).map((_,i)=>`<input class="bhBox" id="bh${i}" maxlength="1" />`).join("")}
-      </div>
-
-      <div class="inputRow">
-        <button class="primary" onclick="bhTry()">${state.lang==="he" ? "בדוק" : "Check"}</button>
-        <button onclick="goBonusFromMandatory()">${state.lang==="he" ? "לבונוס" : "To Bonus"}</button>
-        <button class="danger" onclick="bhSkip()">${state.lang==="he" ? "המשך בכל מקרה (0)" : "Continue anyway (0)"}</button>
-      </div>
-
-      <div id="bhMsg" class="toast">${state.lang==="he" ? "ניסיונות" : "Attempts"}: <b>${bh.attempts}</b> / ${max}</div>
-      <div id="bhLog" class="wordleBox"></div>
-
-      <div class="hintStepper">
-        <button onclick="bhHint()">${state.lang==="he" ? "רמז" : "Hint"} <b>${state.hintLevel.mandatory[ch.id]}/3</b></button>
-      </div>
-
-      <div id="bhHintPane"></div>
-
-      ${missing ? `<p class="hint">${state.lang==="he" ? "(דמו) לא נמצאה מילת פתרון בקבצים שסיפקת." : "(Demo) No target word found in provided files."}</p>` : ""}
-
-      ${state.chapterComplete[ch.id] && STORY_DATA.chapters.some(c=>c.id===ch.id+1) ? `
-        <div class="btnrow" style="margin-top:12px">
-          <button class="primary" onclick="closeModal(); startAt(${ch.id+1},0)">
-            ${state.lang==="he" ? "פרק הבא →" : "Next chapter →"}
-          </button>
-        </div>
-      ` : ""}
+    <div class="inputRow">
+      <button class="primary" onclick="bhTry()">${state.lang==="he" ? "בדוק" : "Check"}</button>
+      <button onclick="goBonusFromMandatory()">${state.lang==="he" ? "לבונוס" : "To Bonus"}</button>
+      <button class="danger" onclick="bhSkip()">${state.lang==="he" ? "המשך בכל מקרה (0)" : "Continue anyway (0)"}</button>
     </div>
-  `;
 
+    <div id="bhMsg" class="toast">${state.lang==="he" ? "ניסיונות" : "Attempts"}: <b>${bh.attempts}</b> / ${max}</div>
+    <div id="bhLog" class="wordleBox"></div>
+
+    <div class="hintStepper">
+      <button onclick="bhHint()">${state.lang==="he" ? "רמז" : "Hint"} <b>${state.hintLevel.mandatory[ch.id]}/3</b></button>
+    </div>
+
+    <div id="bhHintPane"></div>
+
+    ${missing ? `<p class="hint">${state.lang==="he" ? "(דמו) לא נמצאה מילת פתרון בקבצים שסיפקת." : "(Demo) No target word found in provided files."}</p>` : ""}
+
+    ${state.chapterComplete[ch.id] && STORY_DATA.chapters.some(c=>c.id===ch.id+1) ? `
+      <div class="btnrow" style="margin-top:12px">
+        <button class="primary" onclick="closeModal(); startAt(${ch.id+1},0)">
+          ${state.lang==="he" ? "פרק הבא →" : "Next chapter →"}
+        </button>
+      </div>
+    ` : ""}
+  </div>
+`;
   showModal();
 
   const L = (mandatoryTarget(ch)||"").length || 5;
