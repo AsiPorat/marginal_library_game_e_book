@@ -258,7 +258,7 @@
       <p>אם לא הצלחתם לפתור, או בחרתם להמשיך - מקבלים 0 נקודות, אבל הסיפור ממשיך.</p>
 
       <h4>משחק הבונוס - המספר מהאיור</h4>
-      <p>במשחק הבונוס צריך לנחש מספר בין 1 ל-99. יש 3 ניסיונות.</p>
+      <p>במשחק הבונוס צריך לנחש מספר בין 1 ל-10. יש 3 ניסיונות.</p>
       <p>אחרי כל ניסיון מקבלים משוב שמסביר אם אתם קרובים או רחוקים, ואם אתם מתקרבים או מתרחקים ביחס לניסיון הקודם.</p>
       <p>גם כאן, הצלחה נותנת נקודות. ויתור או מעבר בלי פתרון נותנים 0 נקודות - אבל לא עוצרים את הסיפור.</p>
 
@@ -312,7 +312,7 @@
       <p>If you do not solve it, or choose to continue, you get 0 points - but the story still continues.</p>
 
       <h4>Bonus challenge - Number from the illustration</h4>
-      <p>In the bonus game, you guess a number between 1 and 99. You have 3 attempts.</p>
+      <p>In the bonus game, you guess a number between 1 and 10. You have 3 attempts.</p>
       <p>After each attempt, you get feedback that tells you whether you are close or far, and whether you are getting warmer or colder compared with your previous guess.</p>
       <p>Success gives points. Skipping or continuing without solving gives 0 points - but does not stop the story.</p>
 
@@ -604,8 +604,8 @@
     <h2 style="margin-top:0">${state.lang==="he" ? "בונוס — מספר מהתמונה" : "Bonus — Number from the image"}</h2>
     <p class="muted">${
       state.lang==="he"
-        ? "מנחשים מספר (1–99) מתוך התמונה. מילת החובה משמשת מפתח הסתכלות — היא מלמדת מה לספור או לזהות. יש 3 ניסיונות. אפשר להמשיך גם בלי הצלחה (0)."
-        : "Guess a number (1–99) from the image. The mandatory word is the observation key: it tells you what to count or notice. You have 3 attempts. You can continue without solving (0)."
+        ? "מנחשים מספר (1–10) מתוך התמונה. מילת החובה משמשת מפתח הסתכלות — היא מלמדת מה לספור או לזהות. יש 3 ניסיונות. אפשר להמשיך גם בלי הצלחה (0)."
+        : "Guess a number (1–10) from the image. The mandatory word is the observation key: it tells you what to count or notice. You have 3 attempts. You can continue without solving (0)."
     }</p>
 
     <div class="puzzleBox" style="margin-bottom:12px">
@@ -618,7 +618,7 @@
 
     <div class="puzzleBox">
       <div class="inputRow">
-        <input id="bnInput" type="text" inputmode="numeric" placeholder="${state.lang==="he" ? "מספר 1–99" : "Number 1–99"}" />
+        <input id="bnInput" type="text" inputmode="numeric" placeholder="${state.lang==="he" ? "מספר 1–10" : "Number 1–10"}" />
         <button class="primary" onclick="bnTry()">${state.lang==="he" ? "בדוק" : "Check"}</button>
         <button onclick="goMandatoryFromBonus()">${state.lang==="he" ? "לחובה" : "To Mandatory"}</button>
         <button class="danger" onclick="bnSkip()">${state.lang==="he" ? "המשך בכל מקרה (0)" : "Continue anyway (0)"}</button>
@@ -715,7 +715,7 @@
 
     if(!Number.isFinite(g) || g < min || g > maxN){
       msg.className = "toast bad";
-      msg.textContent = state.lang==="he" ? "הכנס מספר 1–99" : "Enter 1–99";
+      msg.textContent = state.lang==="he" ? "הכנס מספר 1–10" : "Enter 1–10";
       return;
     }
 
