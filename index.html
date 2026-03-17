@@ -604,12 +604,16 @@
 
   const body = document.getElementById("modalBody");
   body.innerHTML = `
-    <h2 style="margin-top:0">${state.lang==="he" ? "בונוס — מספר מהתמונה" : "Bonus — Number from the image"}</h2>
-    <p class="muted">${
-      state.lang==="he"
-        ? "מנחשים מספר (1–10) מתוך התמונה. מילת החובה משמשת מפתח הסתכלות — היא מלמדת מה לספור או לזהות. יש 3 ניסיונות. אפשר להמשיך גם בלי הצלחה (0)."
-        : "Guess a number (1–10) from the image. The mandatory word is the observation key: it tells you what to count or notice. You have 3 attempts. You can continue without solving (0)."
-    }</p>
+  <h2 style="margin-top:0">${state.lang==="he" ? "בונוס — מספר מהתמונה" : "Bonus — Number from the image"}</h2>
+
+  <div class="hintPane" style="margin-bottom:12px" dir="${dir()}">
+    <h4>${state.lang==="he" ? "מה מחפשים כאן?" : "What are you looking for here?"}</h4>
+    <p>${state.lang==="he"
+      ? "במהלך הסיפור הוסתרו סימנים ורמזים חזותיים. התמונה אוספת את אותם פרטים בצורה מרוכזת. מצא את הסימנים, ספור או זהה אותם נכון, וכך תגלה את המספר הנסתר."
+      : "Visual clues were hidden throughout the chapter. The image gathers those details in one place. Find the clues, count or identify them correctly, and you will discover the hidden number."}</p>
+  </div>
+
+  <p class="muted">${
 
     <div class="puzzleBox" style="margin-bottom:12px">
       <img
