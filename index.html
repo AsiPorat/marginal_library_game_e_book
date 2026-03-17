@@ -618,43 +618,47 @@
   </div>
 
   <p class="muted">${
+    state.lang==="he"
+      ? "מנחשים מספר (1–99) מתוך התמונה. מילת החובה משמשת מפתח הסתכלות — היא מלמדת מה לספור או לזהות. יש 3 ניסיונות. אפשר להמשיך גם בלי הצלחה (0)."
+      : "Guess a number (1–99) from the image. The mandatory word is the observation key: it tells you what to count or notice. You have 3 attempts. You can continue without solving (0)."
+  }</p>
 
-    <div class="puzzleBox" style="margin-bottom:12px">
-      <img
-        src="images/bonus/bonus_ch${ch.id}.png"
-        alt="${state.lang==="he" ? "תמונת חידת בונוס" : "Bonus puzzle image"}"
-        style="width:100%; display:block; border-radius:14px; border:1px solid rgba(255,255,255,.12)"
-      />
+  <div class="puzzleBox" style="margin-bottom:12px">
+    <img
+      src="images/bonus/bonus_ch${ch.id}.png"
+      alt="${state.lang==="he" ? "תמונת חידת בונוס" : "Bonus puzzle image"}"
+      style="width:100%; display:block; border-radius:14px; border:1px solid rgba(255,255,255,.12)"
+    />
+  </div>
+
+  <div class="puzzleBox">
+    <div class="inputRow">
+      <input id="bnInput" type="text" inputmode="numeric" placeholder="${state.lang==="he" ? "מספר 1–99" : "Number 1–99"}" />
+      <button class="primary" onclick="bnTry()">${state.lang==="he" ? "בדוק" : "Check"}</button>
+      <button onclick="goMandatoryFromBonus()">${state.lang==="he" ? "לחובה" : "To Mandatory"}</button>
+      <button class="danger" onclick="bnSkip()">${state.lang==="he" ? "המשך בכל מקרה (0)" : "Continue anyway (0)"}</button>
     </div>
 
-    <div class="puzzleBox">
-      <div class="inputRow">
-        <input id="bnInput" type="text" inputmode="numeric" placeholder="${state.lang==="he" ? "מספר 1–10" : "Number 1–10"}" />
-        <button class="primary" onclick="bnTry()">${state.lang==="he" ? "בדוק" : "Check"}</button>
-        <button onclick="goMandatoryFromBonus()">${state.lang==="he" ? "לחובה" : "To Mandatory"}</button>
-        <button class="danger" onclick="bnSkip()">${state.lang==="he" ? "המשך בכל מקרה (0)" : "Continue anyway (0)"}</button>
-      </div>
+    <div id="bnMsg" class="toast">${state.lang==="he" ? "ניסיונות" : "Attempts"}: <b>${bn.attempts}</b> / ${maxA}</div>
+    <div id="bnLog" class="wordleBox"></div>
 
-      <div id="bnMsg" class="toast">${state.lang==="he" ? "ניסיונות" : "Attempts"}: <b>${bn.attempts}</b> / ${maxA}</div>
-      <div id="bnLog" class="wordleBox"></div>
-
-      <div class="hintStepper">
-        <button onclick="bnHint()">${state.lang==="he" ? "רמז" : "Hint"} <b>${state.hintLevel.bonus[ch.id]}/3</b></button>
-      </div>
-
-      <div id="bnHintPane"></div>
-
-      ${missing ? `<p class="hint">${state.lang==="he" ? "(דמו) לא נמצא מספר בונוס בקבצים שסיפקת." : "(Demo) No bonus number found in provided files."}</p>` : ""}
-
-      ${state.chapterComplete[ch.id] && STORY_DATA.chapters.some(c=>c.id===ch.id+1) ? `
-        <div class="btnrow" style="margin-top:12px">
-          <button class="primary" onclick="closeModal(); startAt(${ch.id+1},0)">
-            ${state.lang==="he" ? "פרק הבא →" : "Next chapter →"}
-          </button>
-        </div>
-      ` : ""}
+    <div class="hintStepper">
+      <button onclick="bnHint()">${state.lang==="he" ? "רמז" : "Hint"} <b>${state.hintLevel.bonus[ch.id]}/3</b></button>
     </div>
-  `;
+
+    <div id="bnHintPane"></div>
+
+    ${missing ? `<p class="hint">${state.lang==="he" ? "(דמו) לא נמצא מספר בונוס בקבצים שסיפקת." : "(Demo) No bonus number found in provided files."}</p>` : ""}
+
+    ${state.chapterComplete[ch.id] && STORY_DATA.chapters.some(c=>c.id===ch.id+1) ? `
+      <div class="btnrow" style="margin-top:12px">
+        <button class="primary" onclick="closeModal(); startAt(${ch.id+1},0)">
+          ${state.lang==="he" ? "פרק הבא →" : "Next chapter →"}
+        </button>
+      </div>
+    ` : ""}
+  </div>
+`;
 
   showModal();
 
