@@ -390,13 +390,16 @@
 
   const body = document.getElementById("modalBody");
   body.innerHTML = `
-    <h2 style="margin-top:0">${state.lang==="he" ? "אתגר חובה — בול פגיעה" : "Mandatory — Bull & Hit"}</h2>
-    <p class="muted">${
-      state.lang==="he"
-        ? `נחש מילה בת ${target.length} אותיות. אחרי כל ניסיון תקבל בול ופגיעה. יש 5 ניסיונות. אפשר להמשיך גם בלי פתרון (0).`
-        : `Guess a ${target.length}-letter word. After each try you get Bull and Hit counts. You have 5 attempts. You can continue without solving (0).`
-    }</p>
+  <h2 style="margin-top:0">${state.lang==="he" ? "אתגר חובה — בול פגיעה" : "Mandatory — Bull & Hit"}</h2>
 
+  <div class="hintPane" style="margin-bottom:12px" dir="${dir()}">
+    <h4>${state.lang==="he" ? "מה מחפשים כאן?" : "What are you looking for here?"}</h4>
+    <p>${state.lang==="he"
+      ? "בסיפור של הפרק הסתתרה מילה מרכזית שמסכמת רעיון, מצב או מסר חשוב. מצא את המילה מתוך הסיפור, ואז נחש אותה כאן כדי לפתור את החידה."
+      : "A key word was hidden in this chapter — a word that captures an important idea, state, or message from the story. Find that word in the chapter, then guess it here to solve the puzzle."}</p>
+  </div>
+
+  <p class="muted">${
     <div class="btnrow" style="margin-top:10px; justify-content:flex-start">
       <button class="primary" onclick="continueAnyway(); closeModal(); render('reader');">
         ${state.lang==="he" ? "המשך בכל מקרה" : "Continue anyway"}
