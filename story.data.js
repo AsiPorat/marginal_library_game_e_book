@@ -16,7 +16,7 @@ const STORY_DATA = {
     },
     "bonusNumber": {
       "min": 1,
-      "max": 99,
+      "max": 10,
       "attempts": 3,
       "closeThreshold": 7
     }
