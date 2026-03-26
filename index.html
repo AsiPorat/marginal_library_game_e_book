@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ספריית השוליים</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .bhBoxes{display:flex;gap:8px;align-items:center;justify-content:flex-start;flex-wrap:wrap;margin:10px 0}
+    .bhBox{width:48px;height:54px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#fff;font-size:22px;text-align:center}
+    .bhBox:focus{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+    .hintStepper{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+    .hintPane{margin-top:10px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25)}
+    .hintPane h4{margin:0 0 6px 0;font-size:14px;opacity:.95}
+    .hintPane p{margin:0;opacity:.9;line-height:1.6}
+    .locked{opacity:.5;pointer-events:none}
+  </style>
+</head>
+<body>
+  <div id="app"><div class="shell" id="shell"></div></div>
+  <script src="story.data.js"></script>
+  <script src="story.data.english.js"></script>
+  <script>
+  const LS_KEY="marginal_library_state_v19";
+  const defaultState={
+    lang:"he",chapterId:1,pageIndex:0,bookScore:0,seriesScore:0,
+    bonuses:{},mandatoryScore:{},bonusScore:{},mandatoryDone:{},bonusDone:{},
+    chapterComplete:{},unlockedMax:1,lastUndo:null,bh:{},bn:{},
+    hintLevel:{mandatory:{},bonus:{}}
+  };
+  const clone=x=>JSON.parse(JSON.stringify(x));
+  let state=(()=>{try{const r=localStorage.getItem(LS_KEY);return r?Object.assign(clone(defaultState),JSON.parse(r)):clone(defaultState);}catch(e){return clone(defaultState);}})();
+  let STORY_DATA = state.lang==='he' ? STORY_DATA_HE : STORY_DATA_EN;
+  const save=()=>localStorage.setItem(LS_KEY,JSON.stringify(state));
+  const snap=()=>{state.lastUndo=JSON.stringify(state);save();}
+  const undo=()=>{if(!state.lastUndo) return false; try{state=JSON.parse(state.lastUndo);save();return true;}catch(e){return false;}}
+  const t=o=>o?.[state.lang]??"";
+  const dir=()=>state.lang==="he"?"rtl":"ltr";
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const chapter=()=>STORY_DATA.chapters.find(c=>c.id===state.chapterId)||STORY_DATA.chapters[0];
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const shell=document.getElementById("shell");
+  function setLang(l){state.lang=l;STORY_DATA = state.lang==='he' ? STORY_DATA_HE : STORY_DATA_EN;save();render(shell.dataset.mode||"home");}
+  function goHome(){render("home");}
+  function startAt(chId,pageIdx){state.chapterId=chId;state.pageIndex=pageIdx;save();render("reader");}
+  function goPage(i){state.pageIndex=i;save();render("reader");}
+  function goPrevChapterLastPage(){
+  const prevId = state.chapterId - 1;
+  if(prevId>=1 && STORY_DATA.chapters.some(c=>c.id===prevId)){
+    const prevCh = STORY_DATA.chapters.find(c=>c.id===prevId);
+    const prevPages = prevCh.pages?.[state.lang]||[];
+    const prevTotal = Math.max(1, prevPages.length);
+    startAt(prevId, prevTotal-1);
+  }
+}
+  function resetAll(){snap();const keepLang=state.lang;state=clone(defaultState);state.lang=keepLang;save();render("home");}
+  function undoAction(){if(undo()) render(shell.dataset.mode||"home");}
+  function showModal(){document.getElementById("modalBack").style.display="block";document.getElementById("modal").style.display="flex";}
+  function closeModal(){const b=document.getElementById("modalBack");const m=document.getElementById("modal");if(b) b.style.display="none";if(m) m.style.display="none";}
+  function header(){
+    return `<div class="header">
+      <div class="brand">
+        <img src="images/logo.png" class="logo" alt="logo"/>
+        <div class="title">
+          <div class="top">${esc(t(STORY_DATA.seriesTitle))}</div>
+          <div class="sub">${esc(t(STORY_DATA.bookTitle))}</div>
+        </div>
+      </div>
+      <div class="pills">
+        <span class="pill">${state.lang==="he"?"ניקוד ספר":"Book Score"}: <b>${state.bookScore}</b></span>
+        <span class="pill">${state.lang==="he"?"ניקוד סדרה":"Series Score"}: <b>${state.seriesScore}</b></span>
+        <span class="pill">${state.lang==="he"?"בונוסים":"Bonuses"}: <b>${Object.keys(state.bonuses).length}</b></span>
+        <div class="langToggle">
+          <button class="${state.lang==="he"?"primary":""}" onclick="setLang('he')">HE</button>
+          <button class="${state.lang==="en"?"primary":""}" onclick="setLang('en')">EN</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  function footer(){
+    if(state.lang==="he"){
+      return `<div class="footer" dir="rtl"><div class="center">כל הזכויות שמורות ל AsIVision ©</div></div>`;
+    }
+    return `<div class="footer" dir="ltr"><div class="center">All rights reserved AsIVision ©</div></div>`;
+  }
+  function modals(){
+    return `<div id="modalBack" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50" onclick="closeModal()"></div>
+    <div id="modal" style="display:none; position:fixed; inset:0; z-index:51; align-items:center; justify-content:center; padding:18px" onclick="closeModal()">
+      <div class="card" style="width:min(920px,100%); max-height:85vh; overflow:auto" onclick="event.stopPropagation()">
+        <div id="modalBody"></div>
+        <div class="btnrow" style="justify-content:flex-end; margin-top:14px">
+          <button onclick="closeModal()">${state.lang==="he"?"חזרה":"Back"}</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  function home(){
+    const hasProgress=(state.chapterId!==1||state.pageIndex!==0);
+    const showUndo=!!state.lastUndo;
+    return `${header()}
+      <div class="card hero" dir="${dir()}">
+        <img src="images/logo.png" class="homeLogo" alt="logo"/>
+        <h1>${esc(t(STORY_DATA.seriesTitle))}</h1>
+        <p>${state.lang==="he"
+          ?"ספר-משחק דיגיטלי. קוראים פרקים עמוד-עמוד. בסוף כל פרק פותרים אתגר חובה (בול–פגיעה) ואז בונוס מספרי מתוך התמונה. הניקוד משנה את סיום הספר בפרק 5 ונצבר גם לסדרה."
+          :"A digital story-game. Read chapters page by page. At each chapter end, solve the Mandatory challenge (Bull & Hit) and then a visual number bonus puzzle from the image. Your score changes the book ending in Chapter 5 and also accumulates across the series."}</p>
+        <div class="btnrow">
+          <button class="primary" onclick="startAt(1,0)">${state.lang==="he"?"התחל לקרוא":"Start reading"}</button>
+          <button ${hasProgress?"":"disabled"} onclick="render('reader')">${state.lang==="he"?"המשך מהמקום האחרון":"Continue"}</button>
+          <button onclick="openHow()">${state.lang==="he"?"איך זה עובד":"How it works"}</button>
+        </div>
+        <div class="btnrow" style="margin-top:8px">
+          <button class="danger" onclick="resetAll()">${state.lang==="he"?"התחל מהתחלה":"Start over"}</button>
+          ${showUndo?`<button class="ok" onclick="undoAction()">${state.lang==="he"?"בטל":"Undo"}</button>`:""}
+          <button onclick="openChapters()">${state.lang==="he"?"פרקים":"Chapters"}</button>
+        </div>
+      </div>${footer()}${modals()}`;
+  }
+  function paras(text){
+    const parts=(text||"").split(/\n\n+/).map(s=>s.trim()).filter(Boolean);
+    return parts.map(p=>`<p>${esc(p)}</p>`).join("");
+  }
+  function resolveText(text){
+    return String(text||"").replace(/\[ניקוד\]|\[score\]/g, String(state.bookScore));
+  }
+  function getChapterPages(ch){
+    const rawPages=(ch.pages?.[state.lang]||ch.pages?.he||[]);
+    let pages=rawPages.map(resolveText);
+    if(ch.id===5 && Array.isArray(ch.endings) && pages.length){
+      let selected=ch.endings[0];
+      for(const e of ch.endings){
+        if(state.bookScore>=e.threshold) selected=e;
+      }
+      const endingText=resolveText(selected?.text?.[state.lang]||selected?.text?.he||"");
+      const fixedLast=pages[pages.length-1];
+      pages=[...pages.slice(0,-1), endingText, fixedLast];
+    }
+    return pages;
+  }
+  function reader(){
+    const ch=chapter();
+    const pages=getChapterPages(ch);
+    const total=Math.max(1,pages.length);
+    state.pageIndex=clamp(state.pageIndex,0,total-1);
+    const isFinalBookPage=(ch.id===5 && state.pageIndex===total-1);
+    const showPuzzle=state.pageIndex===total-1 && !isFinalBookPage;
+    return `${header()}
+      <div class="card reader" dir="${dir()}">
+        <div class="readerTop">
+          <div class="chapterMeta">
+            <div class="chap">${state.lang==="he"?"פרק":"Chapter"} ${ch.id}</div>
+            <div class="ttl">${esc(t(ch.title))}</div>
+</div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+            <button onclick="goHome()">${state.lang==="he"?"בית":"Home"}</button>
+            <button onclick="openChapters()">${state.lang==="he"?"פרקים":"Chapters"}</button>
+          </div>
+        </div>
+        <div class="pageText ${(ch.id===5 && state.pageIndex===4)?'endingReveal':''}">${paras(pages[state.pageIndex]||"")}</div>
+        <div class="navbar">
+          <div class="navleft">
+            <button ${state.pageIndex===0?"disabled":""} onclick="goPage(${state.pageIndex-1})">${state.lang==="he"?"עמוד קודם":"Prev page"}</button>
+            <button ${state.pageIndex===total-1?"disabled":""} onclick="goPage(${state.pageIndex+1})">${(ch.id===5 && state.pageIndex===3)?(state.lang==="he"?"חשוף את הסוף":"Reveal ending"):(state.lang==="he"?"עמוד הבא":"Next page")}</button>
+          </div>
+          <div class="navmid">${state.lang==="he" ? `עמוד ${state.pageIndex+1} / ${total}` : `Page ${state.pageIndex+1} / ${total}`}</div>
+          ${(state.pageIndex===0 && state.chapterId>1)?`<div class="navright"><button onclick="goPrevChapterLastPage()">${state.lang==="he"?"חזרה":"Back"}</button></div>`:""}
+        </div>
+        ${showPuzzle?endPanel(ch):(isFinalBookPage?finalLinksPanel():"")}
+      </div>${footer()}${modals()}`;
+  }
+  function finalLinksPanel(){
+    return `<div class="metaHint"><div class="metaHint__text">${state.lang==="he"?"סיימת את הספר הראשון. כאן יופיעו בהמשך הקישורים לספר הבא ולסדרה כולה.":"You finished the first book. Links to the next book and the full series will appear here later."}</div></div>
+      <div class="puzzleBox">
+        <h3>${state.lang==="he"?"לאן ממשיכים מכאן?":"Where to next?"}</h3>
+        <div class="btnrow" style="margin-top:12px; display:flex; flex-direction:column; align-items:stretch; gap:10px">
+          <a class="primary" href="#" style="text-align:center; text-decoration:none; display:block; padding:12px 16px; border-radius:12px;">${state.lang==="he"?"לספר הבא (לינק זמני)":"Next book (temporary link)"}</a>
+          <a href="#" style="text-align:center; text-decoration:none; display:block; padding:12px 16px; border-radius:12px; border:1px solid rgba(255,255,255,.18); color:inherit;">${state.lang==="he"?"לסדרה כולה (לינק זמני)":"Full series (temporary link)"}</a>
+        </div>
+      </div>`;
+  }
+  function endPanel(ch){
+    const note = state.lang==="he"
+      ?"כאן פותרים את משחק סוף הפרק. אתגר החובה והבונוס פתוחים תמיד. כדי לפתוח את הפרק הבא — פתרו את אתגר החובה, או בחרו 'המשך בכל מקרה' מתוך אחד המשחקים."
+      :"This is the end-of-chapter game. Mandatory and Bonus are always available. To unlock the next chapter, solve the Mandatory game—or choose 'Continue anyway' inside either game.";
+        const nextId = ch.id + 1;
+    const hasNext = STORY_DATA.chapters.some(c=>c.id===nextId);
+    const canNext = !!state.chapterComplete[ch.id] && hasNext;
+    return `<div class="metaHint"><div class="metaHint__text">${esc(note)}</div></div>
+      <div class="puzzleBox">
+        <h3>${state.lang==="he"?"אתגר חובה — בול פגיעה":"Mandatory — Bull & Hit"}</h3>
+        <div class="inputRow">
+          <button class="primary" onclick="openMandatory()">${state.lang==="he"?"פתח משחק":"Open game"}</button>
+          <span class="pill">${state.lang==="he"?"ניקוד":"Score"}: <b>${state.mandatoryScore[ch.id]??0}</b></span>
+        </div>
+      </div>
+      <div class="puzzleBox" style="margin-top:12px">
+        <h3>${state.lang==="he"?"בונוס — מספר מהאיור":"Bonus — Number from the illustration"}</h3>
+        <div class="inputRow">
+          <button class="primary" onclick="openBonus()">${state.lang==="he"?"פתח משחק":"Open game"}</button>
+          <span class="pill">${state.lang==="he"?"ניקוד":"Score"}: <b>${state.bonusScore[ch.id]??0}</b></span>
+        </div>
+      </div>
+      <div class="btnrow" style="margin-top:12px">
+        ${canNext?`<button class="primary" onclick="startAt(${nextId},0)">${state.lang==="he"?"פרק הבא →":"Next chapter →"}</button>`:""}
+      </div>`;
+  }
+  function isChapterUnlocked(id){ if(id<=1) return true; return id<= (state.unlockedMax||1); }
+  function markChapterComplete(chId){
+    const md=!!state.mandatoryDone[chId];
+    if(md){
+      state.chapterComplete[chId]=true;
+      state.unlockedMax=Math.max(state.unlockedMax||1, chId+1);
+    }
+  }
+  function continueAnyway(fromBonus=false){
+    const ch=chapter();
+    if(!state.mandatoryDone[ch.id]){
+      state.mandatoryDone[ch.id]=true;
+      state.mandatoryScore[ch.id]=0;
+      markChapterComplete(ch.id);
+    }
+    markChapterComplete(ch.id);
+    save();
+    if(fromBonus){
+      const nextId = ch.id + 1;
+      const hasNext = STORY_DATA.chapters.some(c=>c.id===nextId);
+      closeModal();
+      if(!!state.chapterComplete[ch.id] && hasNext){
+        startAt(nextId,0);
+      }else{
+        render("reader");
+      }
+      return;
+    }
+    openChapters();
+  }
+  function openHow(){
+  const body=document.getElementById("modalBody");
+  body.innerHTML=`<h2 style="margin-top:0">${state.lang==="he"?"איך זה עובד":"How it works"}</h2>
+    <div class="hintPane" dir="${dir()}">
+    ${state.lang==="he" ? `
+      <h4>קודם כל — זה ספר</h4>
+      <p>"ספריית השוליים" הוא ספר עלילתי דיגיטלי. קוראים אותו עמוד אחרי עמוד, כמו ספר רגיל. כל פרק מחולק לעמודים קצרים כדי שיהיה נוח לקרוא גם על מסך.</p>
+      <h4>המשחק בתוך הספר</h4>
+      <p>בסוף כל פרק נפתחות שתי חידות: חידת חובה וחידת בונוס. אפשר לפתור אותן כדי לצבור נקודות, ואפשר גם לבחור "המשך בכל מקרה" ולהמשיך בלי להיעצר.</p>
+      <h4>חידת חובה — איך פותרים?</h4>
+      <p>המילה אינה פרט מתוך הסיפור, אלא הרעיון שהפרק כולו נע סביבו.</p>
+      <p>אל תחפש משהו שנאמר במפורש. חפש מה חוזר בתחושה, בהתנהגות של העולם, או במה שג'ונתן עובר. אם היית צריך לתת שם אחד למה שהפרק עושה — זו המילה.</p>
+      <h4>חידת בונוס — איך פותרים?</h4>
+      <p>המספר אינו מסתתר בפריטים אקראיים, אלא בדפוס שהפרק מלמד אותך לזהות.</p>
+      <p>אל תספור הכול. זהה איזה סוג של תופעה חוזרת בפרק — ורק אותה חפש בתמונה.</p>
+      <h4>רמזים וניקוד</h4>
+      <p>הרמזים נועדו לעזור — אבל יש להם מחיר.</p>
+      <p><b>כל שימוש ברמז מוריד 2 נקודות.</b></p>
+      <p>הרמזים לא נותנים תשובה ישירה. הם משנים את הדרך שבה אתה קורא את הפרק.</p>
+      <h4>הניקוד ומה הוא משנה</h4>
+      <p>הנקודות שאתם צוברים משפיעות על שני דברים:</p>
+      <p><b>הסיום של הספר</b><br>בפרק 5 מופיע הסיום של הספר, והוא נקבע לפי מספר הנקודות שצברתם.</p>
+      <p><b>הסדרה כולה</b><br>הנקודות לא נשארות רק בספר הזה. הן מצטברות גם בספרים הבאים ויכולות להשפיע על רמזים, סודות ואירועים נוספים.</p>
+      <h4>איך מתקדמים לפרק הבא?</h4>
+      <p>בסוף הפרק אפשר לפתור את החידות, לנסות, או ללחוץ "המשך בכל מקרה". כך הסיפור אף פעם לא נעצר.</p>
+      <h4>ניווט ושמירה</h4>
+      <p>בתחתית כל עמוד מופיעים כפתורי הניווט. בתחילת פרק אפשר לחזור לעמוד האחרון של הפרק הקודם. ההתקדמות נשמרת אוטומטית במכשיר.</p>
+    ` : `
+      <h4>First of all — this is a book</h4>
+      <p>The Marginal Library is a digital storybook. You read it page by page, like a regular book. Each chapter is split into short pages for comfortable reading on screen.</p>
+      <h4>The game inside the book</h4>
+      <p>At the end of each chapter, two puzzles appear: a Mandatory puzzle and a Bonus puzzle. You can solve them for points, or choose "Continue anyway" and move on.</p>
+      <h4>Mandatory puzzle — how do you solve it?</h4>
+      <p>The word is not just a detail from the story. It is the idea the whole chapter moves around.</p>
+      <p>Do not look for something stated directly. Look for what returns in tone, in the world's behavior, or in what Jonathan goes through. If you had to give one name to what the chapter is doing — that is the word.</p>
+      <h4>Bonus puzzle — how do you solve it?</h4>
+      <p>The number is not hidden in random objects. It is hidden in a pattern the chapter teaches you to notice.</p>
+      <p>Do not count everything. Identify the kind of phenomenon that repeats in the chapter — and only then look for it in the image.</p>
+      <h4>Hints and scoring</h4>
+      <p>Hints are there to help, but they come with a cost.</p>
+      <p><b>Each hint reduces the score by 2 points.</b></p>
+      <p>Hints do not reveal the answer directly. They change the way you read the chapter.</p>
+      <h4>What the score changes</h4>
+      <p>Your score affects two things:</p>
+      <p><b>The ending of this book</b><br>In Chapter 5, the ending depends on the points you collected.</p>
+      <p><b>The wider series</b><br>Your score continues across future books and may affect clues, secrets, and later events.</p>
+      <h4>Unlocking the next chapter</h4>
+      <p>At the end of a chapter, you can solve the puzzles, attempt them, or press "Continue anyway". The story never gets stuck.</p>
+      <h4>Navigation and saving</h4>
+      <p>Use the navigation buttons at the bottom of each page. At the start of a chapter, you can return to the last page of the previous one. Progress is saved automatically on the device.</p>
+    `}
+    </div>`;
+  showModal();
+}
+  function openChapters(){
+    const body=document.getElementById("modalBody");
+    const items=STORY_DATA.chapters.map(ch=>{
+      const unlocked=isChapterUnlocked(ch.id);
+      const status=state.chapterComplete[ch.id]?(state.lang==="he"?"✓ הושלם":"✓ Completed"):(unlocked?(state.lang==="he"?"פתוח":"Open"):(state.lang==="he"?"נעול":"Locked"));
+      return `<button class="${unlocked?'':'locked'}" style="width:100%; text-align:${state.lang==="he"?"right":"left"}" onclick="${unlocked?`pick(${ch.id})`:'return false'}">
+        ${state.lang==="he"?"פרק":"Chapter"} ${ch.id} — ${esc(t(ch.title))}
+        <span class="muted" style="float:${state.lang==="he"?'left':'right'}">${esc(status)}</span>
+      </button>`;
+    }).join("");
+    body.innerHTML=`<h2 style="margin-top:0">${state.lang==="he"?"פרקים":"Chapters"}</h2>
+      <p class="muted">${state.lang==="he"?"פרקים חדשים נפתחים רק אחרי ניסיון בחובה+בונוס או 'המשך בכל מקרה'.":"New chapters unlock only after attempting Mandatory + Bonus or pressing 'Continue anyway'."}</p>${items}`;
+    showModal();
+  }
+  function pick(id){closeModal();startAt(id,0);}
+  function bullHit(target,guess){
+    target=(target||"").toLowerCase();guess=(guess||"").toLowerCase();
+    let bull=0,hit=0;const tArr=target.split(""),gArr=guess.split("");
+    const L=tArr.length;const tUsed=Array(L).fill(false),gUsed=Array(L).fill(false);
+    for(let i=0;i<L;i++){if(gArr[i]===tArr[i]){bull++;tUsed[i]=true;gUsed[i]=true;}}
+    for(let i=0;i<L;i++){if(gUsed[i]) continue;for(let j=0;j<L;j++){if(tUsed[j]) continue;if(gArr[i]===tArr[j]){hit++;tUsed[j]=true;gUsed[i]=true;break;}}}
+    return {bull,hit};
+  }
+  function mandatoryTarget(ch){const a=ch.answers?.mandatoryWord;return (state.lang==="he"?a?.he:a?.en)||a?.he||a?.en||"";}
+  function getHintText(chId,kind,level){
+    const ch=STORY_DATA.chapters.find(c=>c.id===chId);
+    const h=ch?.hints?.[state.lang]?.[kind]||[];
+    return h[level-1] || (state.lang==="he"?"לא הוגדר רמז":"No hint defined");
+  }
+  function getMandatoryLead(chId){
+    const map={
+      1:{he:`משהו התחיל שם, עוד לפני שהוסבר.
+ג'ונתן לא עצר כדי להבין אותו —
+אבל הוא לא זז ממנו.`,en:`Something began there before it was explained.
+Jonathan did not stop to understand it —
+but he did not move away from it.`},
+      2:{he:`זה לא נעלם בבת אחת.
+זה פשוט הפסיק להיות כמו שהיה.`,en:`It did not vanish all at once.
+It simply stopped being what it had been.`},
+      3:{he:`הכול נראה במקום.
+אבל משהו כבר לא יושב בדיוק איפה שהוא אמור.`,en:`Everything seems to be in place.
+But something no longer sits exactly where it should.`},
+      4:{he:`הכול מסודר.
+הכול במקום.
+וזה בדיוק מה שלא מרגיש נכון.`,en:`Everything is ordered.
+Everything is in place.
+And that is exactly what feels wrong.`},
+      5:{he:`משהו כאן כבר לא נשען על מה שהחזיק אותו קודם.`,en:`Something here no longer rests on what once held it up.`}
+    };
+    return map[chId]?.[state.lang] || '';
+  }
+  function getBonusLead(chId){
+    const map={
+      1:{he:`לא כל מה שמופיע חשוב.
+רק מה שלא אמור להיות שם.`,en:`Not everything that appears matters.
+Only what should not be there.`},
+      2:{he:`לא כל מה שחוזר — חוזר באותה צורה.`,en:`Not everything that returns comes back the same way.`},
+      3:{he:`אל תספור דברים.
+תספור מקרים.`,en:`Do not count things.
+Count occurrences.`},
+      4:{he:`לא מה שראית חשוב כאן —
+אלא מה שקיבלת בלי לשאול.`,en:`What matters here is not what you saw —
+but what you accepted without question.`},
+      5:{he:`מה שנשאר בסוף לא תמיד שייך לסוף בלבד.`,en:`What remains at the end does not always belong only to the ending.`}
+    };
+    return map[chId]?.[state.lang] || '';
+  }
+  function openMandatory(){
+  const ch = chapter();
+  const target = String(mandatoryTarget(ch)).trim();
+  const max = STORY_DATA.settings.bullHit.attempts;
+  if(!state.bh[ch.id]) state.bh[ch.id] = { attempts:0, done:false, success:false, log:[], hintsUsed:0 };
+  const bh = state.bh[ch.id];
+  const missing = !target;
+  if(!state.hintLevel.mandatory[ch.id]) state.hintLevel.mandatory[ch.id] = 0;
+  if(!bh.hintsUsed) bh.hintsUsed = 0;
+  const body = document.getElementById("modalBody");
+  body.innerHTML = `
+    <h2 style="margin-top:0">${state.lang==="he" ? "אתגר חובה — בול פגיעה" : "Mandatory — Bull & Hit"}</h2>
+    <p class="muted"><b>${state.lang==="he" ? "לא מחפשים פרט — מחפשים את מה שפועל מתחת לפני השטח." : "Do not look for a detail — look for what moves beneath the surface."}</b></p>
+    <div class="hintPane" style="margin-bottom:12px" dir="${dir()}"><p>${esc(getMandatoryLead(ch.id))}</p></div>
+    <p class="muted">${state.lang==="he" ? `נחש מילה בת ${target.length} אותיות. יש 5 ניסיונות.` : `Guess a ${target.length}-letter word. You have 5 attempts.`}</p>
+    <p class="muted">${state.lang==="he" ? "שימוש ברמז מוריד 2 נקודות" : "Using a hint reduces your score by 2 points"}</p>
+    <div class="btnrow" style="margin-top:10px; justify-content:flex-start"><button class="primary" onclick="continueAnyway(); closeModal(); render('reader');">${state.lang==="he" ? "המשך בכל מקרה" : "Continue anyway"}</button></div>
+    <div class="puzzleBox">
+      <div class="bhBoxes" dir="${state.lang==="he" ? "rtl" : "ltr"}">${Array.from({length:(mandatoryTarget(ch)||"").length||5}).map((_,i)=>`<input class="bhBox" id="bh${i}" maxlength="1" />`).join("")}</div>
+      <div class="inputRow"><button class="primary" onclick="bhTry()">${state.lang==="he" ? "בדוק" : "Check"}</button><button onclick="goBonusFromMandatory()">${state.lang==="he" ? "לבונוס" : "To Bonus"}</button></div>
+      <div id="bhMsg" class="toast">${state.lang==="he" ? "ניסיונות" : "Attempts"}: <b>${bh.attempts}</b> / ${max}</div>
+      <div id="bhLog" class="wordleBox"></div>
+      <div class="hintStepper"><button onclick="bhHint()">${state.lang==="he" ? "רמז" : "Hint"} <b>${state.hintLevel.mandatory[ch.id]}/3</b></button></div>
+      <div id="bhHintPane"></div>
+      ${missing ? `<p class="hint">${state.lang==="he" ? "(דמו) לא נמצאה מילת פתרון בקבצים שסיפקת." : "(Demo) No target word found in provided files."}</p>` : ""}
+      ${state.chapterComplete[ch.id] && STORY_DATA.chapters.some(c=>c.id===ch.id+1) ? `<div class="btnrow" style="margin-top:12px"><button class="primary" onclick="closeModal(); startAt(${ch.id+1},0)">${state.lang==="he" ? "פרק הבא →" : "Next chapter →"}</button></div>` : ""}
+    </div>`;
+  showModal();
+  const L = (mandatoryTarget(ch)||"").length || 5;
+  const boxes = Array.from({length:L}).map((_,i)=>document.getElementById("bh"+i));
+  boxes.forEach((b,i)=>{b.addEventListener("input", ()=>{b.value=(b.value||"").slice(0,1).toUpperCase();if(b.value&&i<L-1) boxes[i+1].focus();});b.addEventListener("keydown", (e)=>{if(e.key==="Backspace"&&!b.value&&i>0) boxes[i-1].focus();});});
+  setTimeout(()=>boxes[0].focus(),0);
+  const renderLog = ()=>{document.getElementById("bhLog").innerHTML=`<div class="wordleTitle">${state.lang==="he" ? "תוצאות" : "Results"}</div>`+bh.log.map(x=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0"><span class="chip">${esc(x.guess)}</span><span class="chip good">${state.lang==="he" ? "בול" : "Bull"}: ${x.bull}</span><span class="chip bad">${state.lang==="he" ? "פגיעה" : "Hit"}: ${x.hit}</span>${x.insight?`<span class="chip">${esc(x.insight)}</span>`:''}</div>`).join("");};
+  renderLog();
+  const syncBhMsg = ()=>{const msg=document.getElementById("bhMsg"); if(!msg) return; if(bh.done&&bh.success){const pts=state.mandatoryScore[ch.id]??0; msg.className="toast ok"; msg.textContent=state.lang==="he"?`פתרת! +${pts}`:`Solved! +${pts}`;} else if(bh.done&&!bh.success){msg.className="toast bad"; msg.textContent=state.lang==="he"?"נגמרו ניסיונות. חובה=0":"No attempts left. Mandatory=0";} else {msg.className="toast"; msg.innerHTML=`${state.lang==="he"?"ניסיונות":"Attempts"}: <b>${bh.attempts}</b> / ${max}`;}}; syncBhMsg();
+  window.goBonusFromMandatory=()=>{closeModal();openBonus();};
+  window.bhHint=()=>{if(state.hintLevel.mandatory[ch.id]<3){state.hintLevel.mandatory[ch.id]+=1;bh.hintsUsed+=1;save();} const lvl=state.hintLevel.mandatory[ch.id]; document.getElementById("bhHintPane").innerHTML=`<div class="hintPane" dir="${dir()}"><h4>${state.lang==="he" ? "רמז" : "Hint"} ${lvl}/3</h4><p>${esc(getHintText(ch.id,"mandatory",lvl))}</p></div>`;};
+  window.bhTry=()=>{const g=boxes.map(b=>(b.value||"").trim()).join("").toLowerCase(); const msg=document.getElementById("bhMsg"); if(g.length!==L){msg.className="toast bad"; msg.textContent=state.lang==="he"?`חייב ${L} אותיות`:`Must be ${L} letters`; return;} bh.attempts+=1; const res=missing?{bull:Math.max(0,5-bh.attempts),hit:Math.min(4,bh.attempts-1)}:bullHit(target,g); let insight=""; if(g===target.toLowerCase()) insight=state.lang==="he"?"בדיוק.":"Exactly."; else if(res.bull===0&&res.hit===0) insight=state.lang==="he"?"אתה מחוץ לכיוון.":"You're off track."; else if(res.bull===0&&res.hit>0) insight=state.lang==="he"?"יש כאן אותיות נכונות, אבל הסדר עדיין לא נכון.":"Some letters are right, but the order is still wrong."; else if(res.bull>0&&res.hit===0&&res.bull<L-1) insight=state.lang==="he"?"אתה בתוך המילה, אבל עדיין לא עד הסוף.":"You are inside the word, but not all the way there yet."; else if(res.bull+res.hit>=L-1) insight=state.lang==="he"?"כמעט. תחשוב איך לומר את זה אחרת.":"Almost. Try phrasing it differently."; else insight=state.lang==="he"?"יש כיוון, אבל הוא עדיין לא מדויק.":"There is a direction, but it is not precise yet."; bh.log.push({guess:g,bull:res.bull,hit:res.hit,insight}); if(!missing&&g===target.toLowerCase()){bh.done=true;bh.success=true;state.mandatoryDone[ch.id]=true; const basePts=Math.max(6,16-(bh.attempts*2)); const pts=Math.max(0,basePts-(bh.hintsUsed*2)); state.mandatoryScore[ch.id]=pts; state.bookScore+=pts; state.seriesScore+=pts; markChapterComplete(ch.id); msg.className="toast ok"; msg.textContent=state.lang==="he"?`פתרת! +${pts}`:`Solved! +${pts}`;} else if(bh.attempts>=max){bh.done=true; bh.success=false; state.mandatoryDone[ch.id]=true; state.mandatoryScore[ch.id]=0; markChapterComplete(ch.id); msg.className="toast bad"; msg.textContent=state.lang==="he"?"נגמרו ניסיונות. חובה=0":"No attempts left. Mandatory=0";} else {msg.className="toast"; msg.textContent=insight+" • "+(state.lang==="he"?"ניסיונות: ":"Attempts: ")+bh.attempts+" / "+max;} save(); render("reader"); openMandatory();};
+  window.bhSkip=()=>{state.mandatoryDone[ch.id]=true; state.mandatoryScore[ch.id]=0; markChapterComplete(ch.id); bh.done=true; bh.success=false; save(); closeModal(); render("reader");};
+}
+  function bonusTarget(ch){const n=ch.answers?.bonusNumber;return Number.isFinite(n)?n:null;}
+  function openBonus(){
+  const ch = chapter();
+  const target = bonusTarget(ch);
+  const min = STORY_DATA.settings.bonusNumber.min;
+  const maxN = 50;
+  const maxA = STORY_DATA.settings.bonusNumber.attempts;
+  const closeT = STORY_DATA.settings.bonusNumber.closeThreshold || 7;
+  if(!state.bn[ch.id]) state.bn[ch.id] = { attempts:0, done:false, success:false, log:[], lastDiff:null, hintsUsed:0 };
+  const bn = state.bn[ch.id];
+  const missing = (target === null);
+  if(!state.hintLevel.bonus[ch.id]) state.hintLevel.bonus[ch.id] = 0;
+  if(!bn.hintsUsed) bn.hintsUsed = 0;
+  const body = document.getElementById("modalBody");
+  body.innerHTML = `
+    <h2 style="margin-top:0">${state.lang==="he" ? "בונוס — מספר מהתמונה" : "Bonus — Number from the image"}</h2>
+    <p class="muted"><b>${state.lang==="he" ? "לא סופרים את מה שרואים — סופרים את מה שחוזר באמת." : "Do not count what you see — count what truly repeats."}</b></p>
+    <div class="hintPane" style="margin-bottom:12px" dir="${dir()}"><p>${esc(getBonusLead(ch.id))}</p></div>
+    <p class="muted">${state.lang==="he" ? "מנחשים מספר (1–50) מתוך התמונה. יש 3 ניסיונות." : "Guess a number (1–50) from the image. You have 3 attempts."}</p>
+    <p class="muted">${state.lang==="he" ? "שימוש ברמז מוריד 2 נקודות" : "Using a hint reduces your score by 2 points"}</p>
+    <div class="btnrow" style="margin-top:10px; justify-content:flex-start"><button class="primary" onclick="continueAnyway(true)">${state.lang==="he" ? "המשך בכל מקרה" : "Continue anyway"}</button></div>
+    <div class="puzzleBox" style="margin-bottom:12px"><img src="images/bonus/bonus_ch${ch.id}.png" alt="${state.lang==="he" ? "תמונת חידת בונוס" : "Bonus puzzle image"}" style="width:100%; display:block; border-radius:14px; border:1px solid rgba(255,255,255,.12)" /></div>
+    <div class="puzzleBox">
+      <div class="inputRow"><input id="bnInput" type="text" inputmode="numeric" placeholder="${state.lang==="he" ? "מספר 1–50" : "Number 1–50"}" /><button class="primary" onclick="bnTry()">${state.lang==="he" ? "בדוק" : "Check"}</button><button onclick="goMandatoryFromBonus()">${state.lang==="he" ? "לחובה" : "To Mandatory"}</button></div>
+      <div id="bnMsg" class="toast">${state.lang==="he" ? "ניסיונות" : "Attempts"}: <b>${bn.attempts}</b> / ${maxA}</div>
+      <div id="bnLog" class="wordleBox"></div>
+      <div class="hintStepper"><button onclick="bnHint()">${state.lang==="he" ? "רמז" : "Hint"} <b>${state.hintLevel.bonus[ch.id]}/3</b></button></div>
+      <div id="bnHintPane"></div>
+      ${missing ? `<p class="hint">${state.lang==="he" ? "(דמו) לא נמצא מספר בונוס בקבצים שסיפקת." : "(Demo) No bonus number found in provided files."}</p>` : ""}
+      ${state.chapterComplete[ch.id] && STORY_DATA.chapters.some(c=>c.id===ch.id+1) ? `<div class="btnrow" style="margin-top:12px"><button class="primary" onclick="closeModal(); startAt(${ch.id+1},0)">${state.lang==="he" ? "פרק הבא →" : "Next chapter →"}</button></div>` : ""}
+    </div>`;
+  showModal();
+  const renderLog=()=>{document.getElementById("bnLog").innerHTML=`<div class="wordleTitle">${state.lang==="he" ? "ניסיונות" : "Attempts"}</div>`+bn.log.map(x=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0"><span class="chip">${x.guess}</span><span class="chip">${esc(x.hint)}</span></div>`).join("");};
+  renderLog();
+  const syncBnMsg=()=>{const msg=document.getElementById("bnMsg"); if(!msg) return; if(bn.done&&bn.success){const pts=state.bonusScore[ch.id]??0; msg.className="toast ok"; msg.textContent=state.lang==="he"?`בינגו! +${pts}`:`Exact! +${pts}`;} else if(bn.done&&!bn.success){msg.className="toast bad"; msg.textContent=state.lang==="he"?"נגמרו ניסיונות. בונוס=0":"No attempts left. Bonus=0";} else {msg.className="toast"; msg.innerHTML=`${state.lang==="he"?"ניסיונות":"Attempts"}: <b>${bn.attempts}</b> / ${maxA}`;}}; syncBnMsg();
+  const classify=(guess,target)=>{const diff=guess-target; if(diff===0) return state.lang==="he"?"בול":"Exact"; if(diff>20) return state.lang==="he"?"הרבה יותר גבוה":"Much higher"; if(diff>10) return state.lang==="he"?"גבוה יותר":"Higher"; if(diff>0) return state.lang==="he"?"קצת גבוה יותר":"Slightly higher"; if(diff<-20) return state.lang==="he"?"הרבה יותר נמוך":"Much lower"; if(diff<-10) return state.lang==="he"?"נמוך יותר":"Lower"; return state.lang==="he"?"קצת נמוך יותר":"Slightly lower";};
+  window.goMandatoryFromBonus=()=>{closeModal(); openMandatory();};
+  window.bnHint=()=>{if(state.hintLevel.bonus[ch.id]<3){state.hintLevel.bonus[ch.id]+=1; bn.hintsUsed+=1; save();} const lvl=state.hintLevel.bonus[ch.id]; document.getElementById("bnHintPane").innerHTML=`<div class="hintPane" dir="${dir()}"><h4>${state.lang==="he" ? "רמז" : "Hint"} ${lvl}/3</h4><p>${esc(getHintText(ch.id,"bonus",lvl))}</p></div>`;};
+  window.bnTry=()=>{const raw=(document.getElementById("bnInput").value||"").trim(); const g=parseInt(raw,10); const msg=document.getElementById("bnMsg"); if(!Number.isFinite(g)||g<min||g>maxN){msg.className="toast bad"; msg.textContent=state.lang==="he"?"הכנס מספר 1–50":"Enter 1–50"; return;} bn.attempts+=1; let hint=""; let diff=0; if(!missing){diff=Math.abs(g-target); if(g===target){bn.done=true; bn.success=true; state.bonusDone[ch.id]=true; state.bonuses[ch.id]=target; const pts=Math.max(0,6-(bn.hintsUsed*2)); state.bonusScore[ch.id]=pts; state.bookScore+=pts; state.seriesScore+=pts; hint=state.lang==="he"?`בינגו! +${pts}`:`Exact! +${pts}`; msg.className="toast ok"; msg.textContent=hint;} else {hint=classify(g,target); if(bn.lastDiff!==null) hint += ` • ` + (diff<bn.lastDiff?(state.lang==="he"?"מתקרב":"Warmer"):(state.lang==="he"?"מתרחק":"Colder")); bn.lastDiff=diff; if(bn.attempts>=maxA){bn.done=true; bn.success=false; state.bonusDone[ch.id]=true; state.bonusScore[ch.id]=0; msg.className="toast bad"; hint += state.lang==="he"?" — נגמרו ניסיונות":" — No attempts left";} else msg.className="toast"; msg.textContent=hint+` • ${(state.lang==="he"?"ניסיונות":"Attempts")}: ${bn.attempts} / ${maxA}`;}} else {hint=state.lang==="he"?"דמו: התקבל":"Demo: received"; if(bn.attempts>=maxA){bn.done=true; bn.success=false; state.bonusDone[ch.id]=true; state.bonusScore[ch.id]=0; msg.className="toast bad";} else msg.className="toast"; msg.textContent=hint+` • ${(state.lang==="he"?"ניסיונות":"Attempts")}: ${bn.attempts} / ${maxA}`;} bn.log.push({guess:g,hint}); markChapterComplete(ch.id); save(); render("reader"); openBonus();};
+  window.bnSkip=()=>{state.bonusDone[ch.id]=true; state.bonusScore[ch.id]=0; bn.done=true; bn.success=false; markChapterComplete(ch.id); save(); const nextId=ch.id+1; const hasNext=STORY_DATA.chapters.some(c=>c.id===nextId); closeModal(); if(!!state.chapterComplete[ch.id]&&hasNext) startAt(nextId,0); else render("reader");};
+}
+  function render(mode){
+    STORY_DATA = state.lang==='he' ? STORY_DATA_HE : STORY_DATA_EN;
+    shell.dataset.mode=mode||shell.dataset.mode||"home";
+    shell.innerHTML=(shell.dataset.mode==="reader")?reader():home();
+    document.documentElement.lang=state.lang;
+    document.documentElement.dir=state.lang==="he"?"rtl":"ltr";
+  }
+  render("home");
+  </script>
+</body>
+</html>

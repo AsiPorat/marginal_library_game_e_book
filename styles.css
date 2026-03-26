@@ -1,0 +1,233 @@
+
+:root{
+  --bg:#0c0f14; --panel:#121826; --text:#e8edf6; --muted:#a8b3c7; --line:#22304a;
+  --accent:#7dd3fc; --accent2:#a78bfa; --danger:#fb7185; --ok:#34d399;
+  --shadow: 0 12px 40px rgba(0,0,0,.35); --radius: 18px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  background: radial-gradient(1200px 700px at 70% -10%, rgba(167,139,250,.25), transparent 60%),
+              radial-gradient(1200px 700px at 20% 0%, rgba(125,211,252,.18), transparent 55%),
+              var(--bg);
+  color:var(--text);
+}
+#app{min-height:100%; display:flex; justify-content:center; padding:24px}
+.shell{width:min(980px, 100%); display:flex; flex-direction:column; gap:16px}
+.header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:14px 16px;
+  background: linear-gradient(180deg, rgba(18,24,38,.92), rgba(15,21,34,.92));
+  border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.brand{display:flex; align-items:center; gap:12px}
+.brand img{
+  width:34px; height:34px; object-fit:contain; border-radius:10px;
+  background: rgba(255,255,255,.06); padding:6px; border:1px solid rgba(255,255,255,.08);
+}
+.brand .title{display:flex; flex-direction:column; gap:2px}
+.brand .title .top{font-weight:800}
+.brand .title .sub{color:var(--muted); font-size:13px}
+.pills{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center}
+.pill{
+  font-size:12px; color:var(--muted);
+  border:1px solid rgba(255,255,255,.10);
+  padding:6px 10px; border-radius:999px;
+  background: rgba(255,255,255,.04);
+}
+.langToggle{
+  display:flex; gap:6px; align-items:center;
+}
+.langToggle button{
+  padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;
+}
+.card{
+  background: linear-gradient(180deg, rgba(18,24,38,.92), rgba(12,18,30,.92));
+  border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding:18px;
+}
+.hero{display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px; padding:26px 18px}
+.hero img{
+  width:110px; height:110px; object-fit:contain; border-radius:22px;
+  background: rgba(255,255,255,.06); padding:14px; border:1px solid rgba(255,255,255,.10);
+}
+.hero h1{margin:0; font-size:28px}
+.hero p{margin:0; color:var(--muted); line-height:1.7; max-width:72ch}
+.btnrow{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+button{
+  cursor:pointer; border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06); color:var(--text);
+  padding:10px 14px; border-radius:12px; font-weight:700;
+  transition: transform .06s ease, background .15s ease, border-color .15s ease;
+}
+button:hover{transform: translateY(-1px); background: rgba(255,255,255,.09)}
+button:disabled{opacity:.45; cursor:not-allowed; transform:none}
+button.primary{background: linear-gradient(135deg, rgba(125,211,252,.22), rgba(167,139,250,.22)); border-color: rgba(125,211,252,.35)}
+button.primary:hover{background: linear-gradient(135deg, rgba(125,211,252,.28), rgba(167,139,250,.28))}
+button.danger{border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10)}
+button.ok{border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10)}
+small.muted{color:var(--muted)}
+.readerTop{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.08); padding-bottom:12px; margin-bottom:14px;
+}
+.readerTop .chapterMeta{display:flex; flex-direction:column; gap:6px}
+.readerTop .chapterMeta .chap{font-size:14px; color:var(--muted)}
+.readerTop .chapterMeta .ttl{font-size:34px; font-weight:900}
+.readerTop .chapterMeta .page{font-size:13px; color:var(--muted)}
+.logoSmall{width:28px; height:28px; object-fit:contain; opacity:.95}
+.pageText{line-height:1.8; font-size:16px; color:#eef2ff; white-space:pre-wrap; min-height:420px}
+.pageText p{margin:0 0 14px 0}
+.pageText p:last-child{margin-bottom:0}
+.navbar{
+  display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  padding-top:14px; margin-top:14px; border-top:1px solid rgba(255,255,255,.08);
+}
+.navleft,.navright{display:flex; gap:10px; flex-wrap:wrap}
+.puzzleBox{
+  margin-top:16px; padding:14px; background: rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.10); border-radius:14px;
+}
+.puzzleBox h3{margin:0 0 8px 0; font-size:16px}
+.puzzleBox .hint{color:var(--muted); font-size:13px; line-height:1.6; margin:8px 0 0 0}
+.inputRow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px}
+
+input[type="text"]{
+  flex:1;
+  min-width:240px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color:var(--text);
+  padding:10px 12px;
+  outline:none;
+}
+
+input[lang="he"]{
+  direction: rtl;
+  text-align: right;
+}
+
+input[lang="en"]{
+  direction: ltr;
+  text-align: left;
+}
+.toast{
+  margin-top:10px; padding:10px 12px; border-radius:12px;
+  border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color:var(--muted);
+}
+.toast.ok{border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.08); color:#d1fae5}
+.toast.bad{border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.10); color:#ffe4e6}
+.footer{
+  padding:12px 6px; color:var(--muted); font-size:12px;
+  display:flex; justify-content:center; align-items:center;
+}
+.footer .center{width:100%; text-align:center;}
+
+.chip{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  margin: 4px 6px 0 0;
+}
+.chip.good{ border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.10); color:#d1fae5; }
+.chip.bad{ border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.12); color:#ffe4e6; }
+.wordleBox{
+  margin-top:12px;
+  padding:12px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.18);
+}
+.wordleTitle{ font-weight:800; margin-bottom:8px; color: var(--text); }
+.wordleRow{ display:flex; gap:10px; align-items:flex-start; margin-top:6px; flex-wrap:wrap;}
+.wordleRow .lbl{ min-width: 92px; color: var(--muted); font-size:12px; padding-top:6px;}
+.wordleRow .chips{ flex:1; }
+
+.metaHint{
+  margin: 12px 0 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255,255,255,.20);
+  background: rgba(255,255,255,.04);
+}
+.metaHint__label{
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.metaHint__text{
+  line-height: 1.55;
+}
+
+/* Meta hint - more diegetic, less UI */
+.metaHint{
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+}
+.metaHint__text{
+  color: rgba(255,255,255,.92);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.logo{width:120px;}
+.homeLogo{width:260px;margin:20px auto;display:block;}
+.page:not(.home) .logo{width:140px;}
+
+
+/* ===== Logo layout (fixed) ===== */
+.header .brand img.logo{
+  width: 140px;          /* medium on all pages */
+  height: 40px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  opacity: .95;
+}
+
+.card.hero img.homeLogo{
+  width: min(560px, 72vw);   /* big on home */
+  height: 150px;             /* tall container feel */
+  object-fit: contain;
+  display: block;
+  margin: 6px auto 14px;
+  padding: 18px 22px;
+  box-sizing: border-box;
+  border-radius: 26px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+}
+
+/* On reader pages we keep the logo only in the top bar, not inside the text area */
+.reader .homeLogo{ display:none !important; }
+
+.header .header-left,
+.header .logo.small {
+  display: none !important;
+}
+
+
+.footer.heFooter{justify-content:center;direction:rtl;}
+.footer.heFooter .center{width:100%;text-align:center;}
+
+.navmid{margin-inline:auto; opacity:.85; font-size:13px; color:var(--muted); align-self:center}
+
+
+.endingReveal{
+  animation: endingFade .65s ease;
+}
+@keyframes endingFade{
+  0%{opacity:0; transform:translateY(10px);}
+  100%{opacity:1; transform:translateY(0);}
+}
+
+.reader{min-height:760px; display:flex; flex-direction:column;}
